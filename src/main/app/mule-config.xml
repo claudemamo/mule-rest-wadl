@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:rest-router="http://www.mulesoft.org/schema/mule/rest-router"
+      xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/rest-router http://www.mulesoft.org/schema/mule/rest-router/current/mule-rest-router.xsd
+        http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/jersey/current/mule-jersey.xsd">
+
+    <flow name="commentsFlow">
+        <http:inbound-endpoint address="http://localhost:8081" exchange-pattern="request-response"/>
+
+        <choice>
+            <when expression="#[message.inboundProperties['http.relative.path'] == 'application.wadl']">
+                <jersey:resources>
+                    <component class="org.ossandme.CommentResource"/>
+                </jersey:resources>
+            </when>
+
+            <otherwise>
+                <rest-router:router templateUri="/{userid}/comments/{title}/feed">
+                    <rest-router:get>
+                        <expression-transformer
+                                expression="#['Retrieving comment on ' + flowVars['title'] + ' for user ' + flowVars['userid']]"/>
+                    </rest-router:get>
+                    <rest-router:put>
+                        <expression-transformer
+                                expression="#['Creating comment on ' + flowVars['title'] + ' for user ' + flowVars['userid']]"/>
+                    </rest-router:put>
+                    <rest-router:post>
+                        <expression-transformer
+                                expression="#['Updating comment on ' + flowVars['title'] + ' for user ' + flowVars['userid']]"/>
+                    </rest-router:post>
+                    <rest-router:delete>
+                        <expression-transformer
+                                expression="#['Deleting comment on ' + flowVars['title'] + ' for user ' + flowVars['userid']]"/>
+                    </rest-router:delete>
+                </rest-router:router>
+                <static-component>
+                    <return-data>Invalid URL :-(</return-data>
+                </static-component>
+            </otherwise>
+        </choice>
+    </flow>
+
+</mule>
